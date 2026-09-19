@@ -15,6 +15,8 @@ import sys
 
 from playwright.sync_api import sync_playwright
 
+from scraper.config import CHROMIUM_EXECUTABLE_PATH
+
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "_inspect")
 
 
@@ -27,7 +29,9 @@ def main() -> None:
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(
+            headless=True, executable_path=CHROMIUM_EXECUTABLE_PATH
+        )
         page = browser.new_page()
         page.goto(login_url, wait_until="networkidle")
 

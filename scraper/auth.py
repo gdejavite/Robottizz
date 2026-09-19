@@ -8,12 +8,14 @@ ajustados assim que inspecionarmos o HTML real do formulário de login
 
 from playwright.sync_api import BrowserContext, sync_playwright
 
-from scraper.config import OnticConfig
+from scraper.config import CHROMIUM_EXECUTABLE_PATH, OnticConfig
 
 
 def login(config: OnticConfig) -> BrowserContext:
     playwright = sync_playwright().start()
-    browser = playwright.chromium.launch(headless=True)
+    browser = playwright.chromium.launch(
+        headless=True, executable_path=CHROMIUM_EXECUTABLE_PATH
+    )
     context = browser.new_context()
     page = context.new_page()
 

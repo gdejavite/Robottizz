@@ -1,0 +1,24 @@
+# Credenciais e segredos — NUNCA versionar
+.env
+*.env
+!.env.example
+
+# Dados extraídos (podem conter informações financeiras sensíveis)
+data/*
+!data/.gitkeep
+reports/*
+!reports/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Sistema
+.DS_Store

@@ -22,3 +22,8 @@ test-results/
 
 # Sistema
 .DS_Store
+
+# Torre Gabriel: dados privados das empresas e saídas de teste
+torre/private/
+torre/test-results/
+torre/node_modules/

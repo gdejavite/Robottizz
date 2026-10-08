@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Torre Gabriel: um prédio em que cada andar é uma empresa, com agentes de IA trabalhando, pedindo aprovação e aprendendo.">
+<title>Torre Gabriel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/*__CSS__*/
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <h1>Torre Gabriel</h1>
+    <p id="fsub">Carregando os andares…</p>
+  </div>
+  <div class="elev" id="elev" role="group" aria-label="Andares do prédio"></div>
+  <div class="top-r"><button class="btn ghost sm" id="btnHelp" aria-label="Atalhos de teclado">?</button><span class="tag">PROTÓTIPO</span></div>
+</header>
+
+<nav class="tabs" role="tablist" id="tabs" aria-label="Seções do andar">
+  <button role="tab" id="tab-office" data-tab="office" aria-controls="v-office" aria-selected="true">Escritório</button>
+  <button role="tab" id="tab-ops" data-tab="ops" aria-controls="v-ops" aria-selected="false" tabindex="-1">Operação</button>
+  <button role="tab" id="tab-chat" data-tab="chat" aria-controls="v-chat" aria-selected="false" tabindex="-1">Chat</button>
+  <button role="tab" id="tab-agents" data-tab="agents" aria-controls="v-agents" aria-selected="false" tabindex="-1">Agentes</button>
+  <button role="tab" id="tab-mem" data-tab="mem" aria-controls="v-mem" aria-selected="false" tabindex="-1">Memória</button>
+  <button role="tab" id="tabConn" data-tab="conn" aria-controls="v-conn" aria-selected="false" tabindex="-1">Conexões</button>
+  <button role="tab" id="tab-top" data-tab="top" aria-controls="v-top" aria-selected="false" tabindex="-1">Cobertura</button>
+</nav>
+
+<main>
+  <section class="view on" id="v-office" role="tabpanel" aria-labelledby="tab-office">
+    <div class="box digest" id="digest" hidden aria-live="polite"></div>
+    <div class="map-tools">
+      <button class="btn" id="btnMeet">Chamar reunião</button>
+      <button class="btn ghost" id="btnPauseAll">Pausar tudo</button>
+      <button class="btn ghost" id="btnGoChat">Falar com a Recepção</button>
+      <span class="hint">Arraste para mover, pinça ou roda para o zoom, toque numa sala ou num agente. Atalhos: tecla ?</span>
+    </div>
+    <div class="mapwrap" id="mapwrap">
+      <canvas id="cv" role="img" aria-label="Mapa isométrico do andar com as salas e os agentes. A lista da equipe e o diário abaixo trazem as mesmas informações em texto."></canvas>
+      <div class="hud hud-ops"><h3>OPERAÇÃO</h3><div class="ops-row" id="counters" aria-live="polite"></div><div class="ops-goals" id="hudGoals"></div><button class="pend" id="hudPend" hidden>Revisar</button></div>
+      <div class="hud hud-alert" id="hudAlert" hidden role="alert">
+        <div><b>Agente travou</b><span></span></div>
+        <button id="alertBtn">Reconectar</button>
+      </div>
+      <ul class="hud hud-roster" id="roster" aria-label="Equipe do andar"></ul>
+      <div class="hud hud-ctrl">
+        <button id="zIn" aria-label="Aproximar">+</button>
+        <button id="zOut" aria-label="Afastar">−</button>
+        <button id="zFit">Visão geral</button><button id="btnLight" aria-label="Iluminação"></button>
+        <button id="btnTeam" aria-controls="roster" aria-expanded="false">Equipe</button>
+      </div>
+      <div class="hud hud-feed"><h3>ACONTECENDO</h3><ul id="hudFeed"></ul></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--work)"></i>Trabalhando</span>
+      <span><i style="background:var(--review)"></i>Revisando</span>
+      <span><i style="background:var(--wait)"></i>Esperando</span>
+      <span><i style="background:var(--stuck)"></i>Travado</span>
+      <span><i style="background:var(--meet)"></i>Em reunião</span>
+      <span><i style="background:#8a93ab"></i>Disponível</span>
+    </div>
+    <div class="below">
+      <div class="box"><h2>Precisam de você <span id="apCount"></span></h2><div id="approvals"></div></div>
+      <div class="box" id="agentBox"><h2>Agente</h2><p class="empty">Toque num agente no mapa para ver o que ele está fazendo.</p></div>
+      <div class="box"><div class="boxh"><h2>Diário do andar</h2><button class="btn ghost sm" id="btnTimeline">Linha do tempo</button></div>
+        <div class="tl" id="tlPanel" hidden>
+          <input type="range" id="tlRange" min="0" max="0" value="0" aria-label="Momento do dia">
+          <div class="acts"><button class="btn sm" id="tlPlay">▶ Reproduzir</button><button class="btn ghost sm" id="tlClose">Fechar</button></div>
+          <p class="tl-info" id="tlInfo" aria-live="polite"></p>
+        </div>
+        <div class="log"><ul id="log"></ul></div></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-top" role="tabpanel" aria-labelledby="tab-top">
+    <div id="topBody"></div>
+  </section>
+
+  <section class="view" id="v-ops" role="tabpanel" aria-labelledby="tab-ops">
+    <h2>Metas da <span id="metaTitle">empresa</span> <span class="tag2" id="metaTag">números simulados</span></h2>
+    <div class="metas" id="metas"></div>
+    <h2>O time está aprendendo?</h2>
+    <div class="kpis" id="learn"></div>
+    <h2>Painel de operação</h2>
+    <div class="kpis" id="kpis"></div>
+    <h2>Fila de tarefas</h2>
+    <div class="board" id="board"></div>
+  </section>
+
+  <section class="view" id="v-chat" role="tabpanel" aria-labelledby="tab-chat">
+    <div class="chat">
+      <h2>Recepção · entrada de tarefas</h2>
+      <p class="hint">Escreva um pedido. <span id="recName">A Recepção</span> classifica a área e encaminha ao agente certo.</p>
+      <div class="msgs" id="msgs" aria-live="polite"></div>
+      <div class="sugg" id="sugg"></div>
+      <div class="send">
+        <input type="text" id="chatIn" placeholder="Ex.: roteiro de carrossel sobre drawdown" aria-label="Novo pedido">
+        <button class="btn" id="chatSend">Enviar</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="v-agents" role="tabpanel" aria-labelledby="tab-agents">
+    <h2>Autonomia, avisos e dados</h2>
+    <div class="set" id="settings"></div>
+    <h2>Equipe: contexto de trabalho e funções</h2>
+    <p class="hint">Escreva aqui o que cada agente deve fazer. Você pode mudar quando quiser; vale na próxima tarefa.</p>
+    <div class="cards" id="agentCards"></div>
+  </section>
+
+  <section class="view" id="v-mem" role="tabpanel" aria-labelledby="tab-mem">
+    <h2>Memória do time</h2>
+    <p class="hint">Tudo que o time aprende fica aqui. Antes de cada tarefa, o agente consulta as lições do time e as suas notas privadas: reaproveita o que deu certo, não repete o que foi devolvido pela revisão, recusado por você ou teve resultado fraco, e usa insights dos colegas.</p>
+    <div class="kpis" id="memStats"></div>
+    <div class="box" style="margin-bottom:14px"><h3 style="margin:0 0 6px;font-family:var(--font-d)">Ensinar ao time</h3>
+      <div class="mrow"><div><label class="hint" for="mKind">Tipo</label><select id="mKind"></select></div><div><label class="hint" for="mScope">Quem aprende</label><select id="mScope"></select></div></div>
+      <label class="hint" for="mText">Lição, regra ou preferência</label><textarea id="mText" rows="3" maxlength="400" placeholder="Ex.: Evitar posts às sextas à noite; nossos leads respondem melhor de terça a quinta."></textarea>
+      <div class="mrow"><div><label class="hint" for="mTags">Temas (opcional, separados por vírgula)</label><input type="text" id="mTags" placeholder="conteudo, leads, campanha"></div>
+      <div class="chk" style="align-self:end"><input type="checkbox" id="mPin"><label for="mPin" style="margin:0;color:var(--text)">Fixar (sempre lembrada)</label></div></div>
+      <div class="acts" style="margin-top:8px"><button class="btn sm" id="mAdd">Ensinar</button></div></div>
+    <div class="mrow"><div><label class="hint" for="fKind">Filtrar por tipo</label><select id="fKind"></select></div><div><label class="hint" for="fScope">Filtrar por memória</label><select id="fScope"></select></div><div><label class="hint" for="fQ">Buscar</label><input type="text" id="fQ" placeholder="palavra ou tema"></div></div>
+    <div class="acts" style="margin:6px 0 14px"><button class="btn sm" id="btnRetro">Retrospectiva semanal</button><button class="btn no sm" id="btnMemClear">Limpar memória</button></div>
+    <div id="memList"></div>
+  </section>
+
+  <section class="view" id="v-conn" role="tabpanel" aria-labelledby="tabConn">
+    <h2>Conexões e cofre</h2>
+    <p class="hint">Quando um token expira, o agente que depende dele trava e avisa você.</p>
+    <div id="conns"></div>
+  </section>
+</main>
+
+<div class="elevfx" id="elevFx" aria-hidden="true"><div class="door l"></div><div class="door r"></div><div class="disp"><b id="efN">7</b><small id="efT"></small></div></div>
+
+<dialog id="apDlg" aria-labelledby="apT"><div class="dlg wide"><div id="apBody"></div></div></dialog>
+
+<dialog id="meetDlg" aria-labelledby="mTitle">
+  <div class="dlg">
+    <h2 id="mTitle">Chamar reunião</h2>
+    <label for="mPauta" class="hint">Pauta</label>
+    <input type="text" id="mPauta" placeholder="Ex.: resultado da semana">
+    <p class="hint" id="mAiHint" hidden>Com IA real: cada participante dá a sua posição e quem conduz consolida em opções A/B para você decidir.</p>
+    <div class="pick" id="mPick"></div>
+    <div class="acts">
+      <button class="btn ghost" id="mCancel">Cancelar</button>
+      <button class="btn" id="mGo">Reunir agora</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="reportDlg" aria-label="Relatório">
+  <div class="dlg wide">
+    <div class="acts" style="justify-content:flex-end;margin-bottom:8px"><button class="btn sm" data-r="print">Imprimir ou salvar PDF</button><button class="btn ghost sm" data-r="close">Fechar</button></div>
+    <div id="reportBody"></div>
+  </div>
+</dialog>
+
+<dialog id="helpDlg" aria-labelledby="helpT">
+  <div class="dlg">
+    <h2 id="helpT">Atalhos de teclado</h2>
+    <dl class="keys">
+      <dt><kbd>1</kbd>–<kbd>7</kbd></dt><dd>Escritório, Operação, Chat, Agentes, Memória, Conexões, Cobertura</dd>
+      <dt><kbd>E</kbd></dt><dd>Elevador: próximo andar (passando pela Cobertura)</dd>
+      <dt><kbd>R</kbd></dt><dd>Revisar a próxima pendência</dd>
+      <dt><kbd>Esc</kbd></dt><dd>Fechar janela, linha do tempo ou seleção</dd>
+      <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Trocar de aba quando o foco está nas abas</dd>
+      <dt><kbd>?</kbd></dt><dd>Esta ajuda</dd>
+    </dl>
+    <div class="acts"><button class="btn" id="helpClose">Fechar</button></div>
+  </div>
+</dialog>
+
+<div id="printArea"></div>
+
+<script>
+/*__JS__*/
+</script>
+</body>
+</html>

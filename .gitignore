@@ -27,3 +27,6 @@ test-results/
 torre/private/
 torre/test-results/
 torre/node_modules/
+
+# Day Trader skills: estado das operações (conta, ordens, config)
+trader/

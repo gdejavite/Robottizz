@@ -1,0 +1,25 @@
+# Configuração do Cloudflare Worker.
+# Você NÃO precisa editar este arquivo à mão: o comando `npm run setup`
+# cria o banco (KV) e preenche o id abaixo automaticamente.
+
+name = "instagram-comment-dm-bot"
+main = "src/index.ts"
+compatibility_date = "2025-11-01"
+
+# Banco de dados (Cloudflare KV). O id é preenchido pelo `npm run setup`.
+[[kv_namespaces]]
+binding = "KV"
+id = "PREENCHIDO_PELO_NPM_RUN_SETUP"
+
+# Rotinas automáticas (cron), em horário UTC:
+#  - a cada 15 minutos: re-tenta as private replies bloqueadas pela Meta
+#  - toda segunda às 07:00 UTC: renova o token de longa duração
+[triggers]
+crons = ["*/15 * * * *", "0 7 * * 1"]
+
+[vars]
+# Versão da Graph API (precisa ser v23.0 ou maior).
+GRAPH_VERSION = "v23.0"
+
+# Os segredos (VERIFY_TOKEN, ACCESS_TOKEN, ADMIN_PASSWORD, APP_SECRET) NÃO ficam
+# aqui. Eles são enviados com `npx wrangler secret put NOME` (veja o DEPLOY.md).

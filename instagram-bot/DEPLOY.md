@@ -77,6 +77,16 @@ npm run setup
 ```
 *O que faz:* cria (ou reaproveita) o banco **KV** chamado `instagram-bot-dados` e escreve o id dele no arquivo `wrangler.toml` sozinho. Termina com `Pronto! Banco ... configurado.`
 
+### ⭐ Atalho recomendado: `npm run configurar`
+Em vez dos passos 2.3 a 2.5 (manuais), rode:
+```bash
+npm run configurar
+```
+*O que faz:* pede cada credencial com o texto **visível**, **testa cada uma na hora** com a Meta
+(recusa token do login do Facebook `EAA...`, token inválido e app secret errado), gera o
+`VERIFY_TOKEN`, cria a senha do painel, grava os 4 segredos na Cloudflare, confere tudo no bot
+publicado e imprime no final exatamente o que colar na Meta. Se der algum ✘, rode de novo.
+
 ### 2.3 Gerar duas senhas aleatórias
 Rode **duas vezes** e **anote** cada resultado (um será o `VERIFY_TOKEN`, outro a `ADMIN_PASSWORD`):
 ```bash

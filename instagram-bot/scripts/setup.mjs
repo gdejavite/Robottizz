@@ -10,8 +10,10 @@ const tomlPath = join(root, "wrangler.toml");
 const NAME = "instagram-bot-dados";
 
 function wrangler(args) {
-  return execFileSync("npx", ["wrangler", ...args], {
+  const win = process.platform === "win32";
+  return execFileSync(win ? "npx.cmd" : "npx", ["wrangler", ...args], {
     cwd: root,
+    shell: win,
     encoding: "utf8",
     stdio: ["inherit", "pipe", "pipe"],
   });

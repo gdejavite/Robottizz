@@ -93,6 +93,16 @@ async function main() {
       spawnSync(win ? "node.exe" : "node", [join(root, "scripts", "setup.mjs")], { cwd: root, stdio: "inherit", shell: win });
     }
     ok("Banco KV configurado");
+    info("Publicando a versão mais nova do bot (inclui a API dos agentes)...");
+    const dep = wrangler(["deploy"]);
+    if (!dep.ok) {
+      bad("A publicação falhou:");
+      console.log(dep.out.slice(-1500));
+      process.exit(1);
+    }
+    const found = dep.out.match(/https:\/\/[\w.-]+\.workers\.dev/);
+    if (found && !existsSync(URL_FILE)) writeFileSync(URL_FILE, found[0] + "\n");
+    ok("Bot publicado" + (found ? `: ${found[0]}` : ""));
   }
 
   // 2) Endereço do bot
@@ -190,6 +200,8 @@ async function main() {
   info("\n[5/6] Senhas");
   const verifyToken = randomBytes(24).toString("hex");
   ok("VERIFY_TOKEN gerado automaticamente");
+  const agentKey = randomBytes(32).toString("hex");
+  ok("AGENT_API_KEY (chave da torre de agentes / n8n) gerada automaticamente");
   let adminPassword = "";
   for (;;) {
     const a = await ask("Crie uma senha para o painel /admin (mínimo 8 caracteres) ou aperte Enter para eu gerar uma:");
@@ -211,14 +223,20 @@ async function main() {
     // modo de teste: grava no .dev.vars do servidor local
     writeFileSync(
       join(root, ".dev.vars"),
-      `VERIFY_TOKEN=${verifyToken}\nACCESS_TOKEN=${token}\nADMIN_PASSWORD=${adminPassword}\nAPP_SECRET=${appSecret}\n`,
+      `VERIFY_TOKEN=${verifyToken}\nACCESS_TOKEN=${token}\nADMIN_PASSWORD=${adminPassword}\nAPP_SECRET=${appSecret}\nAGENT_API_KEY=${agentKey}\n`,
     );
   } else {
     const dir = mkdtempSync(join(tmpdir(), "bot-"));
     const file = join(dir, "secrets.json");
     writeFileSync(
       file,
-      JSON.stringify({ VERIFY_TOKEN: verifyToken, ACCESS_TOKEN: token, ADMIN_PASSWORD: adminPassword, APP_SECRET: appSecret }),
+      JSON.stringify({
+        VERIFY_TOKEN: verifyToken,
+        ACCESS_TOKEN: token,
+        ADMIN_PASSWORD: adminPassword,
+        APP_SECRET: appSecret,
+        AGENT_API_KEY: agentKey,
+      }),
     );
     const r = wrangler(["secret", "bulk", file]);
     rmSync(dir, { recursive: true, force: true });
@@ -227,7 +245,7 @@ async function main() {
       console.log(r.out);
       process.exit(1);
     }
-    ok("4 segredos gravados na Cloudflare");
+    ok("5 segredos gravados na Cloudflare");
   }
 
   const auth = "Basic " + Buffer.from(`admin:${adminPassword}`).toString("base64");
@@ -236,6 +254,7 @@ async function main() {
     admin: false,
     token: false,
     secret: false,
+    api: false,
   };
   for (let attempt = 0; attempt < 8 && !Object.values(checks).every(Boolean); attempt++) {
     if (attempt) await sleep(5000);
@@ -251,11 +270,14 @@ async function main() {
     const sig = "sha256=" + createHmac("sha256", appSecret).update(body).digest("hex");
     const w = await getJson(`${botUrl}/webhook`, { method: "POST", headers: { "x-hub-signature-256": sig }, body });
     checks.secret = w.status === 200;
+    const api = await getJson(`${botUrl}/api/v1/status`, { headers: { authorization: `Bearer ${agentKey}` } });
+    checks.api = api.status === 200;
   }
   (checks.verify ? ok : bad)("VERIFY_TOKEN no bot");
   (checks.admin ? ok : bad)("ADMIN_PASSWORD no bot");
   (checks.token ? ok : bad)("ACCESS_TOKEN no bot");
   (checks.secret ? ok : bad)("APP_SECRET no bot");
+  (checks.api ? ok : bad)("AGENT_API_KEY no bot (API dos agentes)");
   rl.close();
 
   if (!Object.values(checks).every(Boolean)) {
@@ -275,6 +297,12 @@ async function main() {
   console.log(`   Endereço: ${botUrl}/admin`);
   console.log("   Usuário:  admin");
   console.log(`   Senha:    ${adminPassword}`);
+  console.log("--------------------------------------------------------------");
+  console.log(" TORRE DE AGENTES / n8n (credencial 'Header Auth' no n8n):");
+  console.log("   Nome do header:  Authorization");
+  console.log(`   Valor:           Bearer ${agentKey}`);
+  console.log(`   Base da API:     ${botUrl}/api/v1`);
+  console.log("   Atenção: rodar este assistente de novo gera uma chave NOVA (atualize o n8n).");
   console.log("--------------------------------------------------------------\n");
 }
 

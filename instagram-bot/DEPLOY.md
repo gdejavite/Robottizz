@@ -59,7 +59,7 @@ npm install
 ```bash
 npm test
 ```
-*O que faz:* roda 98 testes automáticos que simulam o fluxo inteiro, inclusive o plano B do erro 2534025. Deve terminar com `98 passed`.
+*O que faz:* roda 119 testes automáticos que simulam o fluxo inteiro, inclusive o plano B do erro 2534025. Deve terminar com `98 passed`.
 
 ---
 
@@ -85,7 +85,8 @@ npm run configurar
 *O que faz:* pede cada credencial com o texto **visível**, **testa cada uma na hora** com a Meta
 (recusa token do login do Facebook `EAA...`, token inválido e app secret errado), gera o
 `VERIFY_TOKEN`, cria a senha do painel, grava os 4 segredos na Cloudflare, confere tudo no bot
-publicado e imprime no final exatamente o que colar na Meta. Se der algum ✘, rode de novo.
+publicado e imprime no final exatamente o que colar na Meta. Também gera a `AGENT_API_KEY`, a chave
+que a torre de agentes usa pelo n8n (veja [AGENTES.md](./AGENTES.md)). Se der algum ✘, rode de novo.
 
 ### 2.3 Gerar duas senhas aleatórias
 Rode **duas vezes** e **anote** cada resultado (um será o `VERIFY_TOKEN`, outro a `ADMIN_PASSWORD`):

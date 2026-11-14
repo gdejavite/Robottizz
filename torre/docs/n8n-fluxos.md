@@ -61,3 +61,69 @@ A Torre lê a tabela a cada 20 s (ou no botão "Ler decisões agora"), aplica a 
 Em seguida, marque `status = feito` (ou `erro` com a mensagem) e avise no Slack.
 
 Ações executáveis hoje (Otto, 7º andar): **criar a campanha de teste pausada** (vermelho, confirmação dupla) e **agendar 3 publicações por semana** (amarelo). Para tornar outra ação executável, acrescente `exec:{acao,label,params}` no modelo da tarefa (`TPL`) do andar.
+
+## 4. Bot de DM do Instagram (comentário "ROBÔ" → direct)
+
+O bot roda na Cloudflare (`instagram-bot/` neste repositório) e tem uma API para agentes. O manual
+completo, com todos os campos e o que fazer com cada alerta, está em
+[`instagram-bot/AGENTES.md`](../../instagram-bot/AGENTES.md).
+
+**Credencial no n8n (uma vez):** *Header Auth* chamada `Bot DM Instagram`
+- Nome: `Authorization`
+- Valor: `Bearer <AGENT_API_KEY>` (impressa no final do `npm run configurar`)
+
+Base: `https://instagram-comment-dm-bot.robotizz-directbot.workers.dev/api/v1`.
+Em todo HTTP Request, mande também o header `X-Agente` com o nome do agente (vai para a auditoria do bot).
+
+### 4.1 Execução (acrescentar ao `Switch` do fluxo 3)
+
+| `acao` (tabela `execucoes`) | HTTP Request no bot | Corpo |
+|---|---|---|
+| `igbot_campanha_criar` | `POST /campaigns` | o JSON de `parametros` como está |
+| `igbot_campanha_alterar` | `PATCH /campaigns` | o JSON de `parametros` como está (tem `campanha` = nome) |
+| `igbot_pausar` | `POST /pause` | vazio |
+| `igbot_reativar` | `POST /resume` | vazio |
+| `igbot_token_renovar` | `POST /token/refresh` | vazio |
+
+Resposta `ok: true` → `status = feito`. Senão → `status = erro` com o campo `error` (em português) e
+aviso no Slack. A criação é idempotente: reexecutar a mesma aprovação atualiza a campanha em vez de
+duplicar.
+
+### 4.2 Monitoramento (Alex), a cada 1 hora
+
+Gatilho a cada 1 h → `GET /status` → para cada item de `alertas` que ainda não foi avisado nas últimas
+24 h → inserir na tabela `avisos`:
+
+| coluna | valor |
+|---|---|
+| andar, empresa | Robotizz |
+| agente_id | o campo `agente` do alerta (`alex`, `luna` ou `otto`) |
+| nivel | `vermelho` vira `travado`; `amarelo` vira `amarelo` |
+| titulo | `Bot de DM: ` + `codigo` |
+| resumo | `mensagem` |
+
+Também `GET /health` uma vez por dia: se falhar, mesmo aviso como `travado` para o Alex.
+
+### 4.3 Métricas (Dara), uma vez por dia
+
+Gatilho diário → `GET /metrics` → inserir no Supabase uma linha por dia (tabela sugerida
+`igbot_metricas`: `dia`, `comentarios` = `contadores.comments`, `dms` = `contadores.dms`,
+`follows_convertidos` = `contadores.followsConverted`, `entregas` = `contadores.deliveries`,
+`plano_b` = `contadores.planB`). Os contadores são **acumulados**; para o número do dia, subtraia o
+dia anterior. Com isso dá para criar uma meta no 7º andar com a consulta:
+
+```sql
+select dia, entregas - lag(entregas) over (order by dia) as valor
+from igbot_metricas order by dia;
+```
+
+### Ações executáveis do bot no 7º andar
+
+| Tarefa | Agente | Ação |
+|---|---|---|
+| Campanha ROBÔ no bot de DM do Instagram | Luna | `igbot_campanha_criar` |
+| Variações do aviso público do bot de DM | Maestro | `igbot_campanha_alterar` |
+| Renovar o token do bot de DM do Instagram | Alex | `igbot_token_renovar` |
+| Pausar / Reativar o bot de DM do Instagram | Otto | `igbot_pausar` / `igbot_reativar` |
+
+Todas são amarelas (uma aprovação sua). Os textos passam pela revisão da Íris antes da aprovação.

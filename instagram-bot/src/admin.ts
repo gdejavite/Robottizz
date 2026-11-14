@@ -39,7 +39,7 @@ export function parseShortcode(link: string): string | null {
   return m ? m[1] : null;
 }
 
-async function resolveMedia(env: Env, link: string): Promise<{ mediaId: string; permalink: string }> {
+export async function resolveMedia(env: Env, link: string): Promise<{ mediaId: string; permalink: string }> {
   const code = parseShortcode(link);
   if (!code) throw new Error("Não entendi esse link. Cole o link completo do Reel, ex.: https://www.instagram.com/reel/ABC123/");
   const g = await getGraphCtx(env);

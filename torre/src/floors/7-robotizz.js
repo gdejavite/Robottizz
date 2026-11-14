@@ -10,6 +10,12 @@ var COMP='COMPLIANCE (CVM/Anbima): nunca prometer lucro, renda garantida, retorn
 var BIZ='NEGÓCIO: a Robotizz vende estratégias automatizadas próprias (Maxximus, Lavoazzie, Imbalance, Equilíbrio), acessíveis via OnTick para quem tem conta na XP ou Rico. Planos: SILVER R$ 97, GOLD R$ 149, PLATINUM R$ 379, INFINITE R$ 949. Mensalidades pelo Iugu. Público: homens de 25 a 44 anos, Sul e Sudeste, que querem automatizar sem largar o controle. Caminho de conversão: comentário "ROBÔ" → DM → link da bio → ativação no OnTick.';
 var WPP='WHATSAPP: a conta está em janela pós-restrição (desde {{wpp_restricao}}). Não usar WhatsApp como destino de anúncio nem fazer disparo sem a confirmação do Gabriel.';
 var RISCO='Aviso: resultados passados não garantem resultados futuros. Operar no mercado financeiro envolve risco de perda.';
+/* bot de DM do Instagram (Cloudflare): textos aprovados pela Íris; a chamada real é feita pelo n8n (docs/n8n-fluxos.md, fluxo 4) */
+var IGBOT='BOT DE DM: o comentário "ROBÔ" em qualquer post dispara o bot de DM do Instagram (Cloudflare): private reply pedindo resposta no direct, checagem de follow (sem follow não entrega) e entrega. Quando a Meta limita (erro 2534025), o bot responde em público com uma variação sorteada e re-tenta por 7 dias. Operação pela API do bot via n8n, sempre com aprovação; manual em instagram-bot/AGENTES.md.';
+var IGB_INTRO='Oi {usuario}! Vi o seu comentário. Me responde aqui com um "oi" que eu te explico como funcionam as estratégias automatizadas da Robotizz.';
+var IGB_FOLLOW='Quase lá! Para liberar o material, siga o perfil da Robotizz e me mande outra mensagem aqui.';
+var IGB_ENTREGA='Aqui está: as estratégias automatizadas da Robotizz (Maxximus, Lavoazzie, Imbalance e Equilíbrio) rodam via OnTick, para quem tem conta na XP ou Rico. O passo a passo para ativar está no link da bio. Quer que eu te explique como funciona e quais são os riscos? É só responder aqui.\n\n'+'Aviso: resultados passados não garantem resultados futuros. Operar no mercado financeiro envolve risco de perda.';
+var IGB_AVISOS=['{usuario} te chamei no direct! Se não chegou, me manda ROBÔ por lá 📩','{usuario} manda ROBÔ no meu direct que eu te explico 💬','Opa {usuario}! O direct tá liberado, é só mandar ROBÔ lá 🚀','{usuario} me chama no direct com a palavra ROBÔ 👊','{usuario} responde ROBÔ no direct que eu te mando o material ✅','{usuario} dá uma olhada no direct, ou me manda ROBÔ por lá 🤖'];
 function mk(id,name,role,room,color,hair,auto,seat){return {id:id,name:name,role:role,room:room,color:color,hair:hair,auto:auto,seat:seat||1}}
 function D(t,b,i,d){return {tipo:t,blocos:b,impacto:i,depois:d}}
 /* aprovação de exemplo; exec = ação real enviada ao n8n depois que você aprova */
@@ -69,7 +75,8 @@ registerFloor({
    {id:'iugu',n:'Iugu (mensalidades do OnTick)',d:'Fonte das cobranças, do MRR e do churn',pend:true},
    {id:'meta',n:'Meta Ads via Windsor',d:'Trace, Buck e Otto dependem desta conexão',exp:'token expira em 3 dias'},
    {id:'mql5',n:'Ranking MQL5',d:'Atlas lê posição e desempenho dos robôs'},{id:'gmail',n:'Gmail',d:'Avisos e briefing'},{id:'cal',n:'Google Calendar',d:'Reuniões dos agentes'},
-   {id:'canva',n:'Canva',d:'Artes dos carrosséis'},{id:'n8n',n:'n8n',d:'Automações e filas'},{id:'vercel',n:'Vercel',d:'Hospedagem do app de gestão e do painel'}],
+   {id:'canva',n:'Canva',d:'Artes dos carrosséis'},{id:'n8n',n:'n8n',d:'Automações e filas'},
+   {id:'igbot',n:'Bot de DM do Instagram (Cloudflare)',d:'Comentário ROBÔ → direct → follow → entrega. Alex monitora pelo n8n (API /api/v1).'},{id:'vercel',n:'Vercel',d:'Hospedagem do app de gestão e do painel'}],
  ROUTE:[
    ['atlas',/\bea\b|mql5|ranking|drawdown|drift|backtest|cat[aá]logo|rob[oô]s/i,'Dados e Robôs'],
    ['rita',/reten|churn|cancel|upgrade|reativ|perman[eê]ncia|p[oó]s-venda/i,'Retenção'],
@@ -95,11 +102,11 @@ registerFloor({
    trace:['trafego','cpl','campanha','criativo','leads','compliance'],
    buck:['trafego','verba','cac','ltv','campanha'],
    dara:['dados','funil','receita','mrr','ltv','cac','leads','relatorio'],
-   otto:['execucao','publicar','campanha','deploy','conexao'],
-   luna:['leads','proposta','conversao','prova','compliance','funil'],
+   otto:['execucao','publicar','campanha','deploy','conexao','igbot'],
+   luna:['leads','proposta','conversao','prova','compliance','funil','igbot'],
    atlas:['ea','ranking','drawdown','relatorio','prova','conteudo','robos'],
-   bia:['pedido'],iris:['compliance'],alex:['token','automacao','deploy','conexao','trafego','supabase']},
- KW:[[/reten|churn|permanên/i,'retencao'],[/upgrade|platinum|gold/i,'upgrade'],[/reativ/i,'reativacao'],[/cac|ltv/i,'cac'],[/mrr|receita|faturamento|iugu/i,'receita'],[/funil|pipeline/i,'funil'],[/cat[aá]logo|rob[oô]s/i,'robos'],[/calend[aá]rio/i,'calendario'],[/painel|dados/i,'dados'],[/publicar|agendar/i,'publicar']],
+   bia:['pedido'],iris:['compliance'],alex:['token','automacao','deploy','conexao','trafego','supabase','igbot']},
+ KW:[[/reten|churn|permanên/i,'retencao'],[/upgrade|platinum|gold/i,'upgrade'],[/reativ/i,'reativacao'],[/cac|ltv/i,'cac'],[/mrr|receita|faturamento|iugu/i,'receita'],[/funil|pipeline/i,'funil'],[/cat[aá]logo|rob[oô]s/i,'robos'],[/calend[aá]rio/i,'calendario'],[/painel|dados/i,'dados'],[/bot de dm|direct autom|private reply/i,'igbot'],[/publicar|agendar/i,'publicar']],
  REJ:[
   {k:'promessa',ag:['luna','maestro','cleo','rita','trace'],t:'promessa de ganho no texto',lesson:'Não prometer ganho nem usar "garantido"; mostrar só dado real do ranking, com aviso de risco.'},
   {k:'aviso',ag:['luna','maestro','cleo','rita','trace'],t:'faltou o aviso de risco no rodapé',lesson:'Todo material de trading precisa de aviso de risco visível no rodapé ou no último slide.'},
@@ -128,24 +135,26 @@ registerFloor({
    vic:'Chefe de Receita da Robotizz e dono da meta de faturamento. Toda semana: lê o funil (leads, conversão, ticket e permanência), escolhe no máximo 3 ciclos PDCA de maior impacto (Pareto ou GUT), distribui a verba pelo teto de CAC (LTV/3), cobra o time e resume ao Gabriel com uma decisão clara. Metas provisórias a validar com o Gabriel: receita de R$ 3.000/mês, permanência de 3 meses, 10 leads registrados por semana e 3 peças publicadas por semana. Prioridade atual: 1) registrar leads, 2) retenção, 3) retomar o Instagram. '+BIZ+' ',
    maestro:'Conteúdo e calendário da Robotizz (Maestro Ontick). Antes de criar, considera público, concorrência e gargalos de conversão. Entrega calendário e roteiro completos, prontos para publicar, com conversão como objetivo: comentário "ROBÔ", DM ou clique no link da bio (seguidores são consequência). Usa os nomes das estratégias. Toda peça passa pela Íris. Primeira missão: destravar as {{pecas_paradas}} peças aguardando aprovação. '+COMP+' '+BIZ,
    cleo:'Direção visual e roteiro de carrossel e Reels da Robotizz. Recebe o roteiro do Maestro e descreve cada slide ou cena (fundo, texto, destaque, cor) pronto para o renderizador de carrossel. Fundo escuro com destaque verde, texto de alto contraste, aviso de risco legível no último slide. Reels de até 30 segundos com gancho nos 3 primeiros. '+COMP,
-   luna:'SDR e conversão da Robotizz. Atende os leads do comentário "ROBÔ" e das DMs do Instagram: qualifica (tem conta na XP ou Rico? experiência? capital? objetivo?), responde dúvidas em linguagem simples e conduz ao OnTick. Responde em até 1 hora e registra todo lead no pipeline (Lead, WhatsApp, Call, Ativação, com a fonte), anotando só o necessário (LGPD). '+WPP+' '+COMP+' '+BIZ,
+   luna:'SDR e conversão da Robotizz. Atende os leads do comentário "ROBÔ" e das DMs do Instagram: qualifica (tem conta na XP ou Rico? experiência? capital? objetivo?), responde dúvidas em linguagem simples e conduz ao OnTick. Responde em até 1 hora e registra todo lead no pipeline (Lead, WhatsApp, Call, Ativação, com a fonte), anotando só o necessário (LGPD). Dona das campanhas do bot de DM (palavra-chave, Reel e textos); assume a conversa depois da entrega automática. '+IGBOT+' '+WPP+' '+COMP+' '+BIZ,
    rita:'Retenção e sucesso do cliente. Meta: aumentar a permanência (hoje {{perm_gold}} no GOLD). Plano dos primeiros 90 dias: onboarding (D0, D3, D7, D14, D30), explicação de drawdown em períodos negativos, check-in, reativação de ex-assinantes, upgrade GOLD para PLATINUM (maior margem) e indicação. Contato só com opt-in e dados mínimos (LGPD), sem disparo em massa. '+WPP+' '+COMP,
    trace:'Analista de tráfego pago (Meta Ads), com o Windsor como fonte. Benchmarks: CAC ≤ LTV/3 (métrica-mãe); CPM ≤ R$ 50 (R$ 50 a 70 aceitável, acima de 70 alerta); CTR acima de 2% ótimo e acima de 1% bom (abaixo de 1%, revisar o criativo); connect rate acima de 80%; frequência ≤ 2. CTR, CPC e CPM são diagnóstico: o alvo é custo por lead qualificado e a ativação no OnTick. Anúncios parados desde {{ads_parados}}; melhor semana ({{melhor_semana}}): CTR {{melhor_ctr}} e CPC {{melhor_cpc}}. '+WPP+' '+COMP,
    buck:'Orçamento e escala. Calcula LTV e CAC máximo por plano (GOLD: LTV ≈ {{ltv_gold}}, CAC máximo ≈ {{cac_max}}), propõe verba de teste pequena e escala conservadora, e pausa o que passar do teto. Com poucas conversões, otimiza por um evento mais alto do funil (lead). Nunca move nem gasta verba sem a confirmação dupla do Gabriel. Segurança de conta: pagamento em cartão de crédito. ',
    atlas:'Quant e robôs. Acompanha os {{robos}} do catálogo (mercados WIN, WDO e CCM), o ranking do MQL5 (Top 1 e Top 3 do Brasil), o drawdown e o drift. Mantém o catálogo atualizado (o número de clientes por robô está desatualizado desde {{robos_atualizado}}) e entrega prova auditável, com fonte e data, para o conteúdo. Nunca mexe em conta de trading. Aviso de risco sempre.',
    dara:'Dados e receita. Mantém o painel de funil e receita com dados reais: Supabase (clientes, pipeline, contas, conteúdo, insights) e Iugu (mensalidades do OnTick; integração pendente). Calcula MRR, churn, LTV e CAC máximo por plano e a conversão por fonte. LGPD: trabalha só com dados agregados e nunca expõe nome, telefone ou e-mail. ',
-   alex:'Automação e infraestrutura. Cuida do n8n, dos tokens (Meta e Windsor), da Z-API, do Supabase e do rastreamento (pixel via GTM). Monitora o projeto Supabase e a coleta semanal do Windsor. Prioridades: manter as rotinas ativas, integrar o Iugu em modo somente leitura e aplicar os alertas de segurança do Supabase (advisors). Nunca altera credenciais sozinho.',
-   otto:'Execução técnica por API oficial (Meta Ads e Instagram), sempre depois da aprovação do Gabriel e do portão de compliance da Íris. Cria campanha pausada e nunca ativa sozinho. Segurança de BM: perfil pessoal maduro, Instagram profissional ligado à página (nunca direto à BM), pagamento em cartão de crédito. Registra tudo o que executou. '+WPP,
+   alex:'Automação e infraestrutura. Cuida do n8n, dos tokens (Meta e Windsor), da Z-API, do Supabase e do rastreamento (pixel via GTM). Monitora o projeto Supabase e a coleta semanal do Windsor. Prioridades: manter as rotinas ativas, integrar o Iugu em modo somente leitura e aplicar os alertas de segurança do Supabase (advisors). Nunca altera credenciais sozinho. Monitora o bot de DM do Instagram (/api/v1/status e /api/v1/health) e trata os alertas de token conforme instagram-bot/AGENTES.md. '+IGBOT,
+   otto:'Execução técnica por API oficial (Meta Ads e Instagram), sempre depois da aprovação do Gabriel e do portão de compliance da Íris. Cria campanha pausada e nunca ativa sozinho. Segurança de BM: perfil pessoal maduro, Instagram profissional ligado à página (nunca direto à BM), pagamento em cartão de crédito. Registra tudo o que executou. Executa as ações aprovadas no bot de DM pela API via n8n (criar/alterar campanha, pausar, reativar, renovar token). '+IGBOT+' '+WPP,
    iris:'Compliance e qualidade. Portão obrigatório antes de qualquer peça sair: barra promessa de lucro, "copytrade" e termos vetados, exige aviso de risco, confere números, fontes e a proteção de dados (LGPD) e verifica se o destino WhatsApp está liberado. Devolve para retrabalho com o motivo exato. '+COMP
   },
  TPL:{
    vic:[{t:'Plano de crescimento da semana (PDCA)',rv:1,ap:A('amarelo','Aprovar o plano de crescimento da semana','Três ciclos PDCA priorizados: registrar leads, retenção e retomar o Instagram.')},{t:'Revisão semanal de funil e experimentos'}],
    maestro:[{t:'Destravar as peças paradas do calendário',rv:1,ap:A('amarelo','Publicar as peças que aguardam aprovação','Carrosséis e Reels, com CTA "ROBÔ" e aviso de risco, em 2 semanas.')},
             {t:'Roteiro do carrossel da semana (CTA ROBÔ)',rv:1,ap:A('amarelo','Publicar o carrossel da semana','7 slides com dado real do ranking, CTA "ROBÔ" e aviso de risco.')},
-            {t:'Calendário editorial das próximas 2 semanas',rv:1}],
+            {t:'Calendário editorial das próximas 2 semanas',rv:1},
+            {t:'Variações do aviso público do bot de DM',rv:1,ap:A('amarelo','Atualizar o aviso público do bot de DM','6 variações curtas, sem link e sem promessa, sorteadas quando a Meta limita o direct.',{acao:'igbot_campanha_alterar',label:'atualizar o aviso público da campanha ROBÔ',params:{campanha:'ROBÔ (todos os posts)',aviso_publico:IGB_AVISOS}})}],
    cleo:[{t:'Direção visual do carrossel da semana',rv:1},{t:'Roteiro de Reels de 30s sobre drawdown',rv:1,ap:A('amarelo','Publicar o Reels sobre drawdown','Roteiro de 30s, linguagem simples, sem promessa de ganho.')}],
    luna:[{t:'Qualificar lead do Instagram (comentário ROBÔ)',rv:1,ap:A('amarelo','Enviar a mensagem de conversão ao lead quente','Lead que comentou "ROBÔ", com conta na XP. Mensagem com aviso de risco, sem WhatsApp.')},
-         {t:'Registrar os leads do dia no pipeline'},{t:'Follow-up de leads sem resposta em 24h',rv:1}],
+         {t:'Registrar os leads do dia no pipeline'},{t:'Follow-up de leads sem resposta em 24h',rv:1},
+         {t:'Campanha ROBÔ no bot de DM do Instagram',rv:1,ap:A('amarelo','Ativar a campanha ROBÔ no bot de DM','Comentário "ROBÔ" em qualquer post vira direct automático, com follow obrigatório e aviso de risco na entrega.',{acao:'igbot_campanha_criar',label:'criar a campanha ROBÔ no bot de DM',params:{nome:'ROBÔ (todos os posts)',palavras:['robô','robo'],padrao:true,intro:IGB_INTRO,pedido_follow:IGB_FOLLOW,entrega:IGB_ENTREGA,aviso_publico:IGB_AVISOS}})}],
    rita:[{t:'Plano de retenção dos primeiros 90 dias',rv:1,ap:A('amarelo','Aprovar o plano de retenção dos primeiros 90 dias','Toques em D0, D3, D7, D14 e D30, com meta de permanência de 3 meses.')},
          {t:'Reativar os ex-assinantes do histórico',rv:1,ap:A('vermelho','Enviar a campanha de reativação aos ex-assinantes','Exige confirmação dupla: risco de bloqueio e LGPD. Só e-mail, com opção de sair.')},
          {t:'Plano de upgrade GOLD para PLATINUM',rv:1,ap:A('amarelo','Aprovar o plano de upgrade GOLD para PLATINUM','Aumenta o ticket médio, com explicação do risco.')}],
@@ -153,11 +162,15 @@ registerFloor({
    buck:[{t:'Teto de CAC e verba do teste',rv:1,ap:A('vermelho','Aprovar a verba do teste: R$ 30/dia por 7 dias (R$ 210)','Mexe em dinheiro, então exige confirmação dupla. Teto de CAC de {{cac_max}}.')},{t:'Calcular LTV e CAC máximo por plano'}],
    atlas:[{t:'Atualizar o catálogo de robôs',rv:1,ap:A('amarelo','Atualizar status e clientes dos robôs no sistema de gestão','{{robos}}.')},
           {t:'Montar prova auditável do ranking do MQL5',rv:1},{t:'Checar o drift dos robôs ativos'}],
-   dara:[{t:'Painel de funil e receita (Supabase e Iugu)',rv:1},{t:'Padronizar o registro de leads',rv:1,ap:A('amarelo','Padronizar o registro de leads (campos e origem)','Campos fixos e registro no mesmo dia, sem dados pessoais desnecessários.')},{t:'Calcular MRR, churn e LTV por plano'}],
+   dara:[{t:'Painel de funil e receita (Supabase e Iugu)',rv:1},{t:'Relatório do bot de DM (comentário → entrega)',rv:1},{t:'Padronizar o registro de leads',rv:1,ap:A('amarelo','Padronizar o registro de leads (campos e origem)','Campos fixos e registro no mesmo dia, sem dados pessoais desnecessários.')},{t:'Calcular MRR, churn e LTV por plano'}],
    alex:[{t:'Conferir as rotinas do Supabase e do Windsor',rv:1,ap:A('amarelo','Configurar o alerta de projeto pausado e a coleta semanal','Garante que a coleta do Windsor não pare.')},
          {t:'Integrar o Iugu ao n8n (somente leitura)',rv:1,ap:A('amarelo','Criar a integração do Iugu (somente leitura)','Traz MRR, churn e inadimplência reais para o painel.')},
-         {t:'Revisar os alertas de segurança do Supabase',rv:1,ap:A('amarelo','Revisar os alertas de segurança do Supabase','Reduz risco de acesso indevido aos dados dos clientes.')}],
+         {t:'Revisar os alertas de segurança do Supabase',rv:1,ap:A('amarelo','Revisar os alertas de segurança do Supabase','Reduz risco de acesso indevido aos dados dos clientes.')},
+         {t:'Conferir a saúde do bot de DM do Instagram'},
+         {t:'Renovar o token do bot de DM do Instagram',ap:A('amarelo','Renovar agora o token do bot de DM','O cron já renova toda segunda; use quando o monitoramento acusar falha ou token perto de expirar.',{acao:'igbot_token_renovar',label:'renovar o token do bot de DM',params:{}})}],
    otto:[{t:'Agendar a publicação das peças aprovadas',rv:1,ap:A('amarelo','Agendar 3 publicações por semana no Instagram','Só peças aprovadas pela Íris e por você.',{acao:'instagram_agendar',label:'agendar 3 publicações por semana',params:{por_semana:3}})},
+         {t:'Pausar o bot de DM do Instagram',ap:A('amarelo','Pausar o bot de DM do Instagram','Ninguém recebe direct automático até reativar. Comentários continuam chegando normalmente.',{acao:'igbot_pausar',label:'pausar o bot de DM',params:{}})},
+         {t:'Reativar o bot de DM do Instagram',ap:A('amarelo','Reativar o bot de DM do Instagram','Volta a responder comentários e directs com as campanhas ativas.',{acao:'igbot_reativar',label:'reativar o bot de DM',params:{}})},
          {t:'Montar a campanha de teste pausada no Meta Ads',rv:1,ap:A('vermelho','Criar a campanha de teste (pausada)','Exige confirmação dupla. Criada pausada, sem destino WhatsApp.',{acao:'meta_campanha_pausada',label:'criar a campanha de teste PAUSADA',params:{objetivo:'lead',verba_dia:30,dias:7,destino_whatsapp:false,status:'PAUSED'}})}]
   },
  DV:{
@@ -186,6 +199,11 @@ registerFloor({
      ['Slide 7 · Chamada e aviso','Comente "ROBÔ" e eu te explico.\n'+RISCO],
      ['Legenda','Antes de ativar qualquer estratégia, olhe o histórico e o risco. Salve este post.\n\n'+RISCO]],
      'Meta: leads quentes por semana (comentário "ROBÔ" e DMs), medidos em 7 dias.','O Otto agenda a publicação no Instagram.'),
+   'Variações do aviso público do bot de DM':D('Aviso público do bot (plano B)',[
+     ['Quando aparece','Só quando a Meta bloqueia a private reply por volume (erro 2534025). O bot sorteia uma variação por comentário para não virar padrão de spam.'],
+     ['Variações',IGB_AVISOS.join('\n')],
+     ['Checklist','Curtas, sem link, sem promessa, todas diferentes entre si e com a palavra ROBÔ.']],
+     'Evita que centenas de respostas iguais pareçam spam no viral.','O Otto atualiza a campanha ROBÔ pelo n8n.'),
    'Calendário editorial das próximas 2 semanas':D('Calendário de 2 semanas',[
      ['Semana 1','Seg: carrossel (como ler o ranking). Qua: Reels (drawdown em 30s). Sex: carrossel (gestão de risco).'],
      ['Semana 2','Seg: carrossel (as 4 estratégias via OnTick). Qua: Reels (o que olhar antes de ativar). Sex: post de FAQ.'],
@@ -206,6 +224,14 @@ registerFloor({
      ['Mensagem que a Luna vai enviar','Oi! Vi o seu comentário. As estratégias automatizadas da Robotizz rodam via OnTick, para quem tem conta na XP ou Rico. Posso te explicar como funciona e quais são os riscos?\n\n'+RISCO],
      ['Registro','Lead entra no pipeline: fonte Instagram, etapa Lead, prioridade alta.']],
      'Leva o lead quente para a etapa de WhatsApp ou call, sem disparo em massa.','A Luna envia a DM e registra o lead.'),
+   'Campanha ROBÔ no bot de DM do Instagram':D('Campanha do bot de DM (ROBÔ)',[
+     ['Gatilho','Comentário com a palavra inteira "ROBÔ" (ou "robo") em qualquer post. Campanha padrão: quem mandar direct sem palavra também é atendido.'],
+     ['1 · Intro (private reply)',IGB_INTRO],
+     ['2 · Pedido de follow',IGB_FOLLOW+'\nRepete a cada nova mensagem; sem follow não entrega.'],
+     ['3 · Entrega',IGB_ENTREGA],
+     ['4 · Aviso público (só se a Meta limitar o direct)',IGB_AVISOS.join('\n')],
+     ['Regras','Sem WhatsApp, sem promessa de ganho, aviso de risco na entrega. Depois da entrega, a Luna assume a conversa e registra o lead.']],
+     'Transforma cada comentário "ROBÔ" em lead no direct, 24 horas por dia, sem esforço manual.','O Otto cria a campanha no bot pelo n8n depois da sua aprovação.'),
    'Registrar os leads do dia no pipeline':D('Registro de leads',[
      ['Padrão','Cada lead entra com fonte (Instagram, Meta Ads, Indicação), etapa e prioridade, só com o dado necessário (LGPD).']],
      'Torna conversão e CAC mensuráveis.','A Luna atualiza o pipeline.'),
@@ -253,6 +279,11 @@ registerFloor({
      ['Campos','Fonte, etapa, prioridade, data de entrada e resultado. Sem anotações pessoais.'],
      ['Regra','Todo lead que comentar ou mandar DM entra no mesmo dia.']],
      'Permite medir conversão e CAC por canal.','A Dara documenta o padrão e a Luna passa a usar.'),
+   'Relatório do bot de DM (comentário → entrega)':D('Funil do bot de DM',[
+     ['Funil','Comentários recebidos → comentários com ROBÔ → intros enviadas → pedidos de follow → follows convertidos → entregas. Fonte: /api/v1/metrics (copiado para o Supabase todo dia).'],
+     ['Saúde','Plano B acionado, avisos públicos e recuperadas pelo retry: se o plano B passar de 20% das intros, avisar a Luna.'],
+     ['Próximo passo','Cruzar entregas com leads registrados pela Luna para medir a conversão até a ativação no OnTick.']],
+     'Mostra quantos leads o bot gera e onde o funil perde gente.','A Dara publica o funil no painel.'),
    'Calcular MRR, churn e LTV por plano':D('MRR, churn e LTV',[
      ['Situação','O sistema de gestão tem {{ex_assinantes}} assinantes históricos, todos inativos; a base ativa real está no Iugu.'],
      ['Ação','Calcular MRR e churn reais assim que o Iugu estiver integrado.']],
@@ -276,12 +307,27 @@ registerFloor({
      ['O que faz','Traz faturas e assinaturas, já agregadas, para o Supabase (MRR, churn e inadimplência).'],
      ['Segurança','Token só na credencial do n8n, somente leitura, sem dados pessoais no destino.']],
      'Dá a receita e o churn reais do OnTick.','O Alex cria o fluxo no n8n.'),
+   'Conferir a saúde do bot de DM do Instagram':D('Saúde do bot de DM',[
+     ['O que confere','Status do bot (pausado?, campanhas ativas, fila de retry), token válido na Meta e última renovação semanal.'],
+     ['Alertas','token_renovacao_falhou e token_perto_de_expirar (vermelho, avisa o Gabriel), automacao_pausada, sem_campanha_ativa e plano_b_em_massa (amarelo).'],
+     ['Limite','Gerar token novo e trocar segredos é só com o Gabriel (npm run configurar).']],
+     'Garante que nenhum comentário "ROBÔ" fique sem resposta.','O Alex lê /api/v1/status pelo n8n a cada hora.'),
+   'Renovar o token do bot de DM do Instagram':D('Renovação do token do bot',[
+     ['Ação','Chama a renovação do token de longa duração (ig_refresh_token). Se falhar, o token atual continua valendo até expirar.'],
+     ['Se falhar','Avisar o Gabriel para gerar um token novo na Meta e rodar npm run configurar.']],
+     'Evita que o bot pare por token vencido.','O Otto executa pelo n8n depois da sua aprovação.'),
    'Revisar os alertas de segurança do Supabase':D('Segurança do Supabase',[
      ['Ação','Aplicar as correções apontadas pelos alertas de segurança (advisors) do Supabase, uma por vez e com teste.']],
      'Reduz risco de acesso indevido aos dados dos clientes.','O Alex aplica nas configurações.'),
    'Agendar a publicação das peças aprovadas':D('Agenda de publicação',[
      ['Plano','3 publicações por semana no Instagram, em horários de maior alcance, só de peças aprovadas pela Íris e por você.']],
      'Retoma a frequência de postagem.','O Otto agenda pela API oficial.'),
+   'Pausar o bot de DM do Instagram':D('Pausa do bot de DM',[
+     ['Efeito','Para de responder comentários e directs, inclusive os retries. Nada é apagado; as campanhas continuam salvas.']],
+     'Freio de emergência (ex.: texto errado no ar).','O Otto pausa pelo n8n.'),
+   'Reativar o bot de DM do Instagram':D('Reativação do bot de DM',[
+     ['Efeito','Volta a responder com as campanhas ativas. Comentários feitos durante a pausa não recebem direct.']],
+     'Retoma a captação de leads pelo direct.','O Otto reativa pelo n8n.'),
    'Montar a campanha de teste pausada no Meta Ads':D('Campanha de teste (pausada)',[
      ['Configuração','Objetivo lead, sem destino WhatsApp, R$ 30/dia por 7 dias, criada pausada.'],
      ['Segurança','Instagram ligado à página, pagamento em cartão e ativação só com a sua confirmação dupla.']],

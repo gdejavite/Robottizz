@@ -6,6 +6,8 @@ export interface Env {
   ACCESS_TOKEN: string;
   ADMIN_PASSWORD: string;
   APP_SECRET: string;
+  /** Chave da API de agentes (/api/v1). Opcional: sem ela a API fica desligada. */
+  AGENT_API_KEY?: string;
   /** Variável comum (wrangler.toml) */
   GRAPH_VERSION?: string;
 }

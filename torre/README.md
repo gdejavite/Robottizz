@@ -106,3 +106,7 @@ Marque "Sincronizar sozinho" para atualizar ao abrir a Torre e a cada 6 horas. A
 ## Integrações com o n8n
 
 Veja [`docs/n8n-fluxos.md`](docs/n8n-fluxos.md): aprovação pelo Slack (botões) e execução real (por exemplo, criar a campanha **pausada** depois da aprovação).
+
+## Bot de DM do Instagram (7º andar)
+
+O bot de comentário "ROBÔ" → direct (`instagram-bot/`, na Cloudflare) está ligado ao 7º andar: conexão **Bot de DM do Instagram**, tarefas executáveis da Luna (criar a campanha ROBÔ), do Maestro (aviso público), do Alex (renovar o token) e do Otto (pausar/reativar), além do relatório da Dara e do monitoramento de alertas. Os fluxos do n8n estão na seção 4 de [`docs/n8n-fluxos.md`](docs/n8n-fluxos.md); o manual dos agentes é [`instagram-bot/AGENTES.md`](../instagram-bot/AGENTES.md).

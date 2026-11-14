@@ -1,6 +1,7 @@
 import type { Env } from "./types";
 import { handleVerification, processWebhookPayload, verifySignature } from "./webhook";
 import { handleAdmin } from "./admin";
+import { handleApi } from "./api";
 import { processRetryQueue } from "./retry";
 import { refreshAccessToken } from "./token";
 import { flushMetrics } from "./metrics";
@@ -30,6 +31,10 @@ export default {
         return new Response("EVENT_RECEIVED", { status: 200 });
       }
       return new Response("Method not allowed", { status: 405 });
+    }
+
+    if (url.pathname.startsWith("/api/v1/")) {
+      return handleApi(request, env);
     }
 
     if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {

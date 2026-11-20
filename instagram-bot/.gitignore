@@ -2,3 +2,6 @@ node_modules/
 .wrangler/
 .dev.vars
 .bot-url
+credenciais.env
+instagram-bot.zip
+!credenciais.exemplo.env

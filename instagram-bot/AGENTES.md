@@ -17,6 +17,9 @@ private reply a cada 15 min por até 7 dias. Quem mandar a palavra no direct sem
 - Painel humano: `/admin` (Basic Auth, senha `ADMIN_PASSWORD`)
 - API dos agentes: `/api/v1` (chave `AGENT_API_KEY`, diferente da senha do painel)
 
+Para **validar credenciais, publicar ou alterar o código**, leia [CLAUDE.md](./CLAUDE.md)
+(comandos `node scripts/bot.mjs verificar|aplicar|status|publicar --json`).
+
 ## 2. Autenticação
 
 ```

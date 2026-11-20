@@ -21,6 +21,26 @@ Tempo estimado: 30 a 40 minutos.
 
 ---
 
+## ⚡ Jeito mais fácil: clique duplo
+
+Na pasta `instagram-bot`:
+- **Windows:** clique duplo em **`INICIAR-WINDOWS.bat`**
+- **Mac:** clique duplo em **`INICIAR-MAC.command`** (se o Mac bloquear na primeira vez: botão direito → **Abrir** → **Abrir**)
+
+Na primeira vez ele instala o que precisa e abre um menu:
+
+```
+1) Configurar credenciais (assistente, pergunta uma por uma)
+2) Verificar tudo (ambiente, credenciais e bot no ar)
+3) Ver status, métricas e alertas
+4) Publicar a versão nova (roda os testes antes)
+5) Abrir o endereço do painel
+```
+
+Comece pela **1**. Ela salva uma cópia das credenciais no arquivo `credenciais.env` (secreto, fica só
+no seu computador), que o seu agente da torre usa para revalidar tudo com
+`node scripts/bot.mjs verificar --json`. O resto deste guia é o passo a passo manual, se preferir.
+
 ## Parte 1 — Preparar o computador (uma vez só)
 
 ### 1.1 Abrir o terminal

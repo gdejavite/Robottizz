@@ -2,7 +2,9 @@
 
 Cloudflare Workers (TypeScript) + Cloudflare KV, usando a **Instagram API with Instagram Login** (Graph API v23.0+).
 
+- **Começar:** clique duplo em `INICIAR-WINDOWS.bat` (Windows) ou `INICIAR-MAC.command` (Mac)
 - **Guia de instalação passo a passo (em português): [DEPLOY.md](./DEPLOY.md)**
+- **Para o agente que mantém o bot: [CLAUDE.md](./CLAUDE.md)**
 - Painel de controle (sem redeploy): `https://SEU-WORKER.workers.dev/admin`
 - **Para agentes (torre, n8n, Claude): [AGENTES.md](./AGENTES.md)**, API em `/api/v1` com a chave `AGENT_API_KEY`
 
@@ -19,6 +21,7 @@ Cloudflare Workers (TypeScript) + Cloudflare KV, usando a **Instagram API with I
 | `src/admin.ts`, `src/panel.ts` | Painel `/admin` com Basic Auth |
 | `src/api.ts` | API dos agentes `/api/v1` (status, alertas, campanhas, pausa, token, retry) |
 | `src/config.ts`, `src/metrics.ts`, `src/state.ts`, `src/token.ts` | Config em cache (5 s), métricas em buffer, estado por pessoa, renovação do token |
+| `scripts/bot.mjs`, `scripts/lib.mjs` | Executável (menu e comandos para agentes) e o núcleo de validação/publicação |
 | `test/` | 119 testes automáticos (`npm test`) |
 
 Segredos (fora do código): `VERIFY_TOKEN`, `ACCESS_TOKEN`, `ADMIN_PASSWORD`, `APP_SECRET` e, para a torre de agentes, `AGENT_API_KEY`. O `npm run configurar` gera e grava todos.
@@ -30,5 +33,9 @@ npm install      # instala dependências
 npm test         # roda os testes
 npm run setup    # cria o KV e preenche o wrangler.toml
 npm run configurar  # pede, testa e grava todas as credenciais
+npm run menu        # menu (o mesmo dos atalhos de clique duplo)
+node scripts/bot.mjs verificar --json   # para agentes: valida tudo, saída em JSON
+node scripts/bot.mjs aplicar --json     # para agentes: aplica o credenciais.env sem perguntas
+npm run pacote      # gera instagram-bot.zip (sem segredos e sem node_modules)
 npm run deploy   # publica na Cloudflare
 ```

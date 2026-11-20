@@ -9,7 +9,7 @@ compatibility_date = "2025-11-01"
 # Banco de dados (Cloudflare KV). O id é preenchido pelo `npm run setup`.
 [[kv_namespaces]]
 binding = "KV"
-id = "PREENCHIDO_PELO_NPM_RUN_SETUP"
+id = "aef5612e339243d7abed8911832c8728"
 
 # Rotinas automáticas (cron), em horário UTC:
 #  - a cada 15 minutos: re-tenta as private replies bloqueadas pela Meta

@@ -2,7 +2,7 @@
   "name": "instagram-comment-dm-bot",
   "version": "1.0.0",
   "private": true,
-  "description": "Bot de coment\u00e1rio para direct do Instagram (Cloudflare Workers + KV)",
+  "description": "Bot de comentário para direct do Instagram (Cloudflare Workers + KV)",
   "type": "module",
   "scripts": {
     "setup": "node scripts/setup.mjs",
@@ -11,7 +11,14 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "gerar-token": "node scripts/gerar-token.mjs",
-    "configurar": "node scripts/configurar.mjs"
+    "configurar": "node scripts/configurar.mjs",
+    "bot": "node scripts/bot.mjs",
+    "menu": "node scripts/bot.mjs menu",
+    "verificar": "node scripts/bot.mjs verificar",
+    "aplicar": "node scripts/bot.mjs aplicar",
+    "status": "node scripts/bot.mjs status",
+    "publicar": "node scripts/bot.mjs publicar",
+    "pacote": "git archive --format=zip --prefix=instagram-bot/ -o instagram-bot.zip HEAD:instagram-bot"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261110.1",

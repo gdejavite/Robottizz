@@ -1,24 +1,36 @@
-// Assistente de configuração: pede cada credencial, TESTA na hora e grava na Cloudflare.
-// Rode:  npm run configurar
-import readline from "node:readline/promises";
-import { spawnSync } from "node:child_process";
-import { randomBytes, createHmac } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const IG = process.env.IG_HOST || "https://graph.instagram.com"; // IG_HOST só existe para testes
-const SKIP_CF = process.env.CONFIG_SKIP_CLOUDFLARE === "1"; // só para testes
-const V = "v23.0";
-const URL_FILE = join(root, ".bot-url");
+// Assistente de configuração (para humanos): pede cada credencial, TESTA na hora e grava na Cloudflare.
+// Rode:  npm run configurar   (ou pelo menu: node scripts/bot.mjs menu, opção 1)
+// A versão sem perguntas, para agentes, é:  node scripts/bot.mjs aplicar
+import readline from "node:readline";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  CHECK_LABELS,
+  CRED_FILE,
+  SKIP_CF,
+  URL_FILE,
+  botUrl,
+  checkBot,
+  clean,
+  cloudflareLoggedIn,
+  deploy,
+  ensureKv,
+  fillGenerated,
+  isUp,
+  metaInstructions,
+  normalizeUrl,
+  readCreds,
+  uploadSecrets,
+  validateAppSecret,
+  validateToken,
+  wrangler,
+  writeCreds,
+} from "./lib.mjs";
 
 const ok = (m) => console.log(`\x1b[32m  ✔ ${m}\x1b[0m`);
 const bad = (m) => console.log(`\x1b[31m  ✘ ${m}\x1b[0m`);
 const info = (m) => console.log(`\x1b[36m${m}\x1b[0m`);
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Leitura de respostas que funciona digitando OU colando várias linhas de uma vez.
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: false });
 const lines = [];
 const waiting = [];
@@ -37,39 +49,7 @@ async function ask(q) {
   }
   return line.trim();
 }
-/** Remove espaços, quebras de linha e aspas que costumam vir junto ao colar. */
-const clean = (v) => v.replace(/^["'`]+|["'`]+$/g, "").replace(/\s+/g, "");
 
-function wrangler(args, { interactive = false } = {}) {
-  const win = process.platform === "win32";
-  const r = spawnSync(win ? "npx.cmd" : "npx", ["wrangler", ...args], {
-    cwd: root,
-    encoding: "utf8",
-    shell: win,
-    stdio: interactive ? "inherit" : "pipe",
-  });
-  return { ok: r.status === 0, out: `${r.stdout ?? ""}${r.stderr ?? ""}` };
-}
-
-async function getJson(url, init) {
-  try {
-    const res = await fetch(url, init);
-    const text = await res.text();
-    let body = {};
-    try {
-      body = JSON.parse(text);
-    } catch {
-      body = { raw: text };
-    }
-    return { status: res.status, body, text };
-  } catch (e) {
-    return { status: 0, body: { error: { message: e.message } }, text: "" };
-  }
-}
-
-const errMsg = (b) => b?.error?.message ?? b?.error ?? b?.raw ?? "erro desconhecido";
-
-// ---------------------------------------------------------------------------
 async function main() {
   console.log("\n==============================================");
   console.log(" Assistente de configuração do bot do Instagram");
@@ -77,68 +57,50 @@ async function main() {
   console.log("Vou pedir as credenciais uma por vez e testar cada uma na hora.");
   console.log("Para sair a qualquer momento: Ctrl + C.");
 
-  // 1) Login Cloudflare + banco KV
+  // 1) Cloudflare: login, banco KV e versão mais nova no ar
   if (!SKIP_CF) {
-    info("\n[1/6] Conferindo login na Cloudflare...");
-    const who = wrangler(["whoami"]);
-    if (!who.ok || /not authenticated|not logged in/i.test(who.out)) {
+    info("\n[1/6] Cloudflare");
+    if (!cloudflareLoggedIn()) {
       console.log("Vai abrir o navegador para você autorizar. Clique em Allow.");
       wrangler(["login"], { interactive: true });
     }
     ok("Logado na Cloudflare");
-    const toml = readFileSync(join(root, "wrangler.toml"), "utf8");
-    if (toml.includes("PREENCHIDO_PELO_NPM_RUN_SETUP")) {
-      info("Configurando o banco KV...");
-      const win = process.platform === "win32";
-      spawnSync(win ? "node.exe" : "node", [join(root, "scripts", "setup.mjs")], { cwd: root, stdio: "inherit", shell: win });
+    const kv = ensureKv();
+    if (!kv.ok) {
+      bad("Não consegui configurar o banco KV:");
+      console.log(kv.out);
+      process.exit(1);
     }
     ok("Banco KV configurado");
     info("Publicando a versão mais nova do bot (inclui a API dos agentes)...");
-    const dep = wrangler(["deploy"]);
-    if (!dep.ok) {
+    const d = deploy();
+    if (!d.ok) {
       bad("A publicação falhou:");
-      console.log(dep.out.slice(-1500));
+      console.log(d.out.slice(-1500));
       process.exit(1);
     }
-    const found = dep.out.match(/https:\/\/[\w.-]+\.workers\.dev/);
-    if (found && !existsSync(URL_FILE)) writeFileSync(URL_FILE, found[0] + "\n");
-    ok("Bot publicado" + (found ? `: ${found[0]}` : ""));
+    ok("Bot publicado" + (d.url ? `: ${d.url}` : ""));
   }
 
   // 2) Endereço do bot
   info("\n[2/6] Endereço do bot");
-  const saved = existsSync(URL_FILE) ? readFileSync(URL_FILE, "utf8").trim() : "";
-  let botUrl = "";
+  const saved = botUrl();
+  let url = "";
   for (;;) {
-    const a = await ask(
-      saved
-        ? `Endereço do bot (aperte Enter para usar ${saved}):`
-        : "Cole o endereço do bot (ex.: https://instagram-comment-dm-bot.SEU-NOME.workers.dev):",
-    );
-    let u = (a || saved).replace(/\s+/g, "");
-    if (!/^https?:\/\//.test(u)) u = `https://${u}`;
+    const a = await ask(`Endereço do bot (aperte Enter para usar ${saved}):`);
     try {
-      u = new URL(u).origin;
+      url = normalizeUrl(a || saved);
     } catch {
       bad("Endereço inválido.");
       continue;
     }
-    const r = await getJson(u + "/");
-    if (r.status === 200 && /no ar/i.test(r.body.raw ?? r.text)) {
-      ok(`Bot respondendo em ${u}`);
-      botUrl = u;
+    if (await isUp(url)) {
+      ok(`Bot respondendo em ${url}`);
       break;
     }
-    bad(`O bot não respondeu em ${u} (status ${r.status}).`);
-    if (!SKIP_CF) {
-      const d = await ask("Quer que eu publique o bot agora? (s/n)");
-      if (/^s/i.test(d)) {
-        wrangler(["deploy"], { interactive: true });
-        await sleep(5000);
-      }
-    }
+    bad(`O bot não respondeu em ${url}.`);
   }
-  writeFileSync(URL_FILE, botUrl + "\n");
+  writeFileSync(URL_FILE, url + "\n");
 
   // 3) ACCESS_TOKEN
   info("\n[3/6] Token de acesso do Instagram (ACCESS_TOKEN)");
@@ -149,19 +111,14 @@ async function main() {
   for (;;) {
     token = clean(await ask("Cole o token (começa com IG):"));
     if (!token) continue;
-    if (token.startsWith("EAA")) {
-      bad("Esse token começa com EAA: é do 'login do Facebook' (o do seu outro sistema de publicações).");
-      bad("Este bot usa o 'login do Instagram'. Gere o token na página 'API setup with Instagram login'.");
-      continue;
-    }
-    const r = await getJson(`${IG}/${V}/me?fields=user_id,username`, { headers: { Authorization: `Bearer ${token}` } });
-    if (r.status === 200 && r.body.username) {
-      username = r.body.username;
+    const t = await validateToken(token);
+    if (t.ok) {
+      username = t.username;
       ok(`Token válido. Conta: @${username}`);
       break;
     }
-    bad(`A Meta recusou o token: ${errMsg(r.body)}`);
-    console.log("  Dica: gere um token novo e copie de novo, inteiro.");
+    bad(t.error);
+    if (t.motivo === "recusado_pela_meta") console.log("  Dica: gere um token novo e copie de novo, inteiro.");
   }
 
   // 4) APP_SECRET
@@ -172,25 +129,20 @@ async function main() {
   for (;;) {
     appSecret = clean(await ask("Cole o Instagram app secret:"));
     if (!appSecret) continue;
-    if (!/^[0-9a-f]{32}$/i.test(appSecret)) {
-      bad("Isso não parece um app secret (normalmente são 32 letras/números, de 0-9 e a-f).");
-      const c = await ask("Usar assim mesmo? (s/n)");
-      if (!/^s/i.test(c)) continue;
+    const s = await validateAppSecret(appSecret, token);
+    if (!s.ok) {
+      bad(s.error);
+      continue;
     }
-    // Teste com a Meta: trocar o token usando o segredo. Se o segredo estiver errado, a Meta recusa.
-    const r = await getJson(
-      `${IG}/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(appSecret)}&access_token=${encodeURIComponent(token)}`,
-    );
-    if (r.status === 200 && r.body.access_token) {
+    if (s.confirmado) {
       ok("App secret confirmado pela Meta");
-      token = r.body.access_token; // token de longa duração (60 dias)
+      token = s.longToken;
       ok("Token convertido para longa duração (60 dias)");
       break;
     }
-    const msg = String(errMsg(r.body));
-    if (/secret/i.test(msg) || r.body?.error?.code === 101) {
-      bad(`A Meta recusou o app secret: ${msg}`);
-      continue;
+    if (s.formatoSuspeito) {
+      bad("Isso não parece um app secret (normalmente são 32 letras/números, de 0-9 e a-f).");
+      if (!/^s/i.test(await ask("Usar assim mesmo? (s/n)"))) continue;
     }
     ok("Formato OK (a Meta não permite confirmar o segredo com um token que já é de longa duração; o teste final confirma).");
     break;
@@ -198,112 +150,40 @@ async function main() {
 
   // 5) Senhas
   info("\n[5/6] Senhas");
-  const verifyToken = randomBytes(24).toString("hex");
-  ok("VERIFY_TOKEN gerado automaticamente");
-  const agentKey = randomBytes(32).toString("hex");
-  ok("AGENT_API_KEY (chave da torre de agentes / n8n) gerada automaticamente");
-  let adminPassword = "";
-  for (;;) {
-    const a = await ask("Crie uma senha para o painel /admin (mínimo 8 caracteres) ou aperte Enter para eu gerar uma:");
-    if (!a) {
-      adminPassword = randomBytes(9).toString("base64url");
-      break;
-    }
-    if (a.length >= 8) {
-      adminPassword = a;
-      break;
-    }
-    bad("Senha curta demais.");
-  }
-  ok("Senha do painel definida");
+  const creds = { ACCESS_TOKEN: token, APP_SECRET: appSecret };
+  const a = await ask("Crie uma senha para o painel /admin (mínimo 8 caracteres) ou aperte Enter para eu gerar uma:");
+  if (a && a.length >= 8) creds.ADMIN_PASSWORD = a;
+  else if (a) bad("Senha curta demais: vou gerar uma.");
+  fillGenerated(creds);
+  ok("VERIFY_TOKEN, senha do painel e AGENT_API_KEY prontos");
 
   // 6) Gravar e testar
   info("\n[6/6] Gravando na Cloudflare e testando o bot...");
-  if (SKIP_CF) {
-    // modo de teste: grava no .dev.vars do servidor local
-    writeFileSync(
-      join(root, ".dev.vars"),
-      `VERIFY_TOKEN=${verifyToken}\nACCESS_TOKEN=${token}\nADMIN_PASSWORD=${adminPassword}\nAPP_SECRET=${appSecret}\nAGENT_API_KEY=${agentKey}\n`,
-    );
-  } else {
-    const dir = mkdtempSync(join(tmpdir(), "bot-"));
-    const file = join(dir, "secrets.json");
-    writeFileSync(
-      file,
-      JSON.stringify({
-        VERIFY_TOKEN: verifyToken,
-        ACCESS_TOKEN: token,
-        ADMIN_PASSWORD: adminPassword,
-        APP_SECRET: appSecret,
-        AGENT_API_KEY: agentKey,
-      }),
-    );
-    const r = wrangler(["secret", "bulk", file]);
-    rmSync(dir, { recursive: true, force: true });
-    if (!r.ok) {
-      bad("Não consegui gravar os segredos:");
-      console.log(r.out);
-      process.exit(1);
-    }
-    ok("5 segredos gravados na Cloudflare");
+  const up = uploadSecrets(creds);
+  if (!up.ok) {
+    bad("Não consegui gravar os segredos:");
+    console.log(up.out);
+    process.exit(1);
   }
+  ok("5 segredos gravados na Cloudflare");
+  writeCreds(creds);
+  ok(`Cópia local salva em ${CRED_FILE} (secreta; serve para o seu agente revalidar depois)`);
 
-  const auth = "Basic " + Buffer.from(`admin:${adminPassword}`).toString("base64");
-  const checks = {
-    verify: false,
-    admin: false,
-    token: false,
-    secret: false,
-    api: false,
-  };
-  for (let attempt = 0; attempt < 8 && !Object.values(checks).every(Boolean); attempt++) {
-    if (attempt) await sleep(5000);
-    const v = await getJson(`${botUrl}/webhook?hub.mode=subscribe&hub.verify_token=${verifyToken}&hub.challenge=OK42`);
-    checks.verify = v.status === 200 && (v.body.raw ?? v.text) === "OK42";
-    const s = await getJson(`${botUrl}/admin/api/state`, { headers: { authorization: auth } });
-    checks.admin = s.status === 200;
-    if (checks.admin) {
-      const h = await getJson(`${botUrl}/admin/api/health`, { method: "POST", headers: { authorization: auth, "x-admin": "1" } });
-      checks.token = h.status === 200 && h.body.username === username;
-    }
-    const body = "{}";
-    const sig = "sha256=" + createHmac("sha256", appSecret).update(body).digest("hex");
-    const w = await getJson(`${botUrl}/webhook`, { method: "POST", headers: { "x-hub-signature-256": sig }, body });
-    checks.secret = w.status === 200;
-    const api = await getJson(`${botUrl}/api/v1/status`, { headers: { authorization: `Bearer ${agentKey}` } });
-    checks.api = api.status === 200;
-  }
-  (checks.verify ? ok : bad)("VERIFY_TOKEN no bot");
-  (checks.admin ? ok : bad)("ADMIN_PASSWORD no bot");
-  (checks.token ? ok : bad)("ACCESS_TOKEN no bot");
-  (checks.secret ? ok : bad)("APP_SECRET no bot");
-  (checks.api ? ok : bad)("AGENT_API_KEY no bot (API dos agentes)");
+  const res = await checkBot(url, creds, { expectUsername: username, attempts: 8 });
+  for (const [k, v] of Object.entries(res)) (v ? ok : bad)(CHECK_LABELS[k]);
   rl.close();
-
-  if (!Object.values(checks).every(Boolean)) {
-    bad("Algum teste falhou. Rode  npm run configurar  de novo e mande a tela para o Claude.");
+  if (!Object.values(res).every(Boolean)) {
+    bad("Algum teste falhou. Rode de novo e, se continuar, mande a tela para o Claude.");
     process.exit(1);
   }
 
   console.log("\n==============================================================");
-  console.log(" TUDO CERTO! ✅  Agora configure o webhook na Meta:");
+  console.log(" TUDO CERTO! ✅");
   console.log("==============================================================");
-  console.log(" Página: seu app > Instagram > API setup with Instagram login > Configure webhooks\n");
-  console.log(` Callback URL:  ${botUrl}/webhook`);
-  console.log(` Verify token:  ${verifyToken}`);
-  console.log("\n Clique em 'Verify and save' e ative (Subscribe) os campos:  comments  e  messages");
-  console.log("\n--------------------------------------------------------------");
-  console.log(" PAINEL DO BOT (guarde a senha num lugar seguro):");
-  console.log(`   Endereço: ${botUrl}/admin`);
-  console.log("   Usuário:  admin");
-  console.log(`   Senha:    ${adminPassword}`);
-  console.log("--------------------------------------------------------------");
-  console.log(" TORRE DE AGENTES / n8n (credencial 'Header Auth' no n8n):");
-  console.log("   Nome do header:  Authorization");
-  console.log(`   Valor:           Bearer ${agentKey}`);
-  console.log(`   Base da API:     ${botUrl}/api/v1`);
-  console.log("   Atenção: rodar este assistente de novo gera uma chave NOVA (atualize o n8n).");
-  console.log("--------------------------------------------------------------\n");
+  console.log(metaInstructions(url, creds));
+  console.log(`\n Senha do painel:  ${creds.ADMIN_PASSWORD}`);
+  console.log(" Rodar este assistente de novo gera VERIFY_TOKEN e AGENT_API_KEY NOVOS");
+  console.log(" (atualize a Meta e o n8n). Para só revalidar: node scripts/bot.mjs verificar\n");
 }
 
 main().catch((e) => {

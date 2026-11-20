@@ -18,7 +18,7 @@
     "aplicar": "node scripts/bot.mjs aplicar",
     "status": "node scripts/bot.mjs status",
     "publicar": "node scripts/bot.mjs publicar",
-    "pacote": "git archive --format=zip --prefix=instagram-bot/ -o instagram-bot.zip HEAD:instagram-bot"
+    "pacote": "git -C .. archive --format=zip --prefix=instagram-bot/ -o instagram-bot/instagram-bot.zip HEAD:instagram-bot"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261110.1",
